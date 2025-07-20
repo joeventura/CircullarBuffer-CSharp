@@ -36,7 +36,7 @@ namespace CircularBuffer
         private int _size;
 
         public CircularBuffer(int capacity)
-            : this(capacity, new T[] { })
+            : this(capacity, Array.Empty<T>())
         {
         }
 
@@ -82,28 +82,16 @@ namespace CircularBuffer
         /// Maximum capacity of the buffer. Elements pushed into the buffer after
         /// maximum capacity is reached (IsFull = true), will remove an element.
         /// </summary>
-        public int Capacity { get { return _buffer.Length; } }
+        public int Capacity => _buffer.Length;
 
-        public bool IsFull
-        {
-            get
-            {
-                return Size == Capacity;
-            }
-        }
+        public bool IsFull => Size == Capacity;
 
-        public bool IsEmpty
-        {
-            get
-            {
-                return Size == 0;
-            }
-        }
+        public bool IsEmpty => Size == 0;
 
         /// <summary>
         /// Current buffer size (the number of elements that the buffer has).
         /// </summary>
-        public int Size { get { return _size; } }
+        public int Size => _size;
 
         /// <summary>
         /// Element at the front of the buffer - this[0].
@@ -123,6 +111,90 @@ namespace CircularBuffer
         {
             ThrowIfEmpty();
             return _buffer[(_end != 0 ? _end : Capacity) - 1];
+        }
+
+        /// <summary>
+        /// Tries to get the element at the front of the buffer without throwing an exception.
+        /// </summary>
+        /// <param name="item">The front element if the buffer is not empty.</param>
+        /// <returns>True if the buffer is not empty and the item was retrieved, false otherwise.</returns>
+        public bool TryPeekFront(out T item)
+        {
+            if (IsEmpty)
+            {
+                item = default(T);
+                return false;
+            }
+            item = _buffer[_start];
+            return true;
+        }
+
+        /// <summary>
+        /// Tries to get the element at the back of the buffer without throwing an exception.
+        /// </summary>
+        /// <param name="item">The back element if the buffer is not empty.</param>
+        /// <returns>True if the buffer is not empty and the item was retrieved, false otherwise.</returns>
+        public bool TryPeekBack(out T item)
+        {
+            if (IsEmpty)
+            {
+                item = default(T);
+                return false;
+            }
+            item = _buffer[(_end != 0 ? _end : Capacity) - 1];
+            return true;
+        }
+
+        /// <summary>
+        /// Removes all elements from the buffer.
+        /// </summary>
+        public void Clear()
+        {
+            if (!IsEmpty)
+            {
+                Array.Clear(_buffer, 0, _buffer.Length);
+                _start = 0;
+                _end = 0;
+                _size = 0;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether the buffer contains a specific value.
+        /// </summary>
+        /// <param name="item">The object to locate in the buffer.</param>
+        /// <returns>True if item is found in the buffer; otherwise, false.</returns>
+        public bool Contains(T item)
+        {
+            var comparer = EqualityComparer<T>.Default;
+            foreach (var bufferItem in this)
+            {
+                if (comparer.Equals(bufferItem, item))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Copies the elements of the buffer to an Array, starting at a particular Array index.
+        /// </summary>
+        /// <param name="array">The one-dimensional Array that is the destination of the elements copied from buffer.</param>
+        /// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            if (array == null)
+                throw new ArgumentNullException(nameof(array));
+            if (arrayIndex < 0)
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            if (array.Length - arrayIndex < Size)
+                throw new ArgumentException("The destination array has fewer elements than the collection.");
+
+            var segments = new ArraySegment<T>[2] { ArrayOne(), ArrayTwo() };
+            foreach (ArraySegment<T> segment in segments)
+            {
+                Array.Copy(segment.Array, segment.Offset, array, arrayIndex, segment.Count);
+                arrayIndex += segment.Count;
+            }
         }
 
         public T this[int index]
