@@ -258,5 +258,134 @@ namespace CircularBuffer.Tests
 
             Assert.That(buffer.Back(), Is.EqualTo(4));
         }
+
+        [Test]
+        public void CircularBuffer_TryPeekFront_EmptyBuffer_ReturnsFalse()
+        {
+            var buffer = new CircularBuffer<int>(5);
+            
+            bool result = buffer.TryPeekFront(out int item);
+            
+            Assert.That(result, Is.False);
+            Assert.That(item, Is.EqualTo(default(int)));
+        }
+
+        [Test]
+        public void CircularBuffer_TryPeekFront_NonEmptyBuffer_ReturnsTrue()
+        {
+            var buffer = new CircularBuffer<int>(5, new[] { 1, 2, 3 });
+            
+            bool result = buffer.TryPeekFront(out int item);
+            
+            Assert.That(result, Is.True);
+            Assert.That(item, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void CircularBuffer_TryPeekBack_EmptyBuffer_ReturnsFalse()
+        {
+            var buffer = new CircularBuffer<int>(5);
+            
+            bool result = buffer.TryPeekBack(out int item);
+            
+            Assert.That(result, Is.False);
+            Assert.That(item, Is.EqualTo(default(int)));
+        }
+
+        [Test]
+        public void CircularBuffer_TryPeekBack_NonEmptyBuffer_ReturnsTrue()
+        {
+            var buffer = new CircularBuffer<int>(5, new[] { 1, 2, 3 });
+            
+            bool result = buffer.TryPeekBack(out int item);
+            
+            Assert.That(result, Is.True);
+            Assert.That(item, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void CircularBuffer_Clear_EmptiesBuffer()
+        {
+            var buffer = new CircularBuffer<int>(5, new[] { 1, 2, 3, 4, 5 });
+            
+            Assert.That(buffer.Size, Is.EqualTo(5));
+            Assert.That(buffer.IsEmpty, Is.False);
+            
+            buffer.Clear();
+            
+            Assert.That(buffer.Size, Is.EqualTo(0));
+            Assert.That(buffer.IsEmpty, Is.True);
+            Assert.That(buffer.Capacity, Is.EqualTo(5));
+        }
+
+        [Test]
+        public void CircularBuffer_Contains_ExistingItem_ReturnsTrue()
+        {
+            var buffer = new CircularBuffer<int>(5, new[] { 1, 2, 3, 4, 5 });
+            
+            Assert.That(buffer.Contains(3), Is.True);
+            Assert.That(buffer.Contains(1), Is.True);
+            Assert.That(buffer.Contains(5), Is.True);
+        }
+
+        [Test]
+        public void CircularBuffer_Contains_NonExistingItem_ReturnsFalse()
+        {
+            var buffer = new CircularBuffer<int>(5, new[] { 1, 2, 3, 4, 5 });
+            
+            Assert.That(buffer.Contains(6), Is.False);
+            Assert.That(buffer.Contains(0), Is.False);
+        }
+
+        [Test]
+        public void CircularBuffer_Contains_EmptyBuffer_ReturnsFalse()
+        {
+            var buffer = new CircularBuffer<int>(5);
+            
+            Assert.That(buffer.Contains(1), Is.False);
+        }
+
+        [Test]
+        public void CircularBuffer_CopyTo_ValidArray_CopiesElements()
+        {
+            var buffer = new CircularBuffer<int>(5, new[] { 1, 2, 3, 4 });
+            var array = new int[10];
+            
+            buffer.CopyTo(array, 2);
+            
+            Assert.That(array[2], Is.EqualTo(1));
+            Assert.That(array[3], Is.EqualTo(2));
+            Assert.That(array[4], Is.EqualTo(3));
+            Assert.That(array[5], Is.EqualTo(4));
+        }
+
+        [Test]
+        public void CircularBuffer_CopyTo_NullArray_ThrowsException()
+        {
+            var buffer = new CircularBuffer<int>(5, new[] { 1, 2, 3 });
+            
+            Assert.That(() => buffer.CopyTo(null, 0),
+                        Throws.Exception.TypeOf<ArgumentNullException>());
+        }
+
+        [Test]
+        public void CircularBuffer_CopyTo_InvalidIndex_ThrowsException()
+        {
+            var buffer = new CircularBuffer<int>(5, new[] { 1, 2, 3 });
+            var array = new int[5];
+            
+            Assert.That(() => buffer.CopyTo(array, -1),
+                        Throws.Exception.TypeOf<ArgumentOutOfRangeException>());
+        }
+
+        [Test]
+        public void CircularBuffer_CopyTo_InsufficientSpace_ThrowsException()
+        {
+            var buffer = new CircularBuffer<int>(5, new[] { 1, 2, 3, 4 });
+            var array = new int[5];
+            
+            Assert.That(() => buffer.CopyTo(array, 2),
+                        Throws.Exception.TypeOf<ArgumentException>());
+        }
     }
 }
